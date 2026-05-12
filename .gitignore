@@ -5,6 +5,11 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# DeepXDE models
+*.h5
+*.ckpt
+*.ckpt.*
+
 # C extensions
 *.so
 
