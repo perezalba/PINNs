@@ -31,10 +31,10 @@ $$
 \end{gather*}
 $$
 
-Where $u$ is the horizontal velocity, $v$ the vertical velocity, $p$ the pressure, $\rho$ the density ($1~kg/m^3$), and $\nu$ the kinematic viscosity ($0.01~m^2/s$). 
+Where $u$ is the horizontal velocity, $v$ the vertical velocity, $p$ the pressure, $\rho$ the density ($1 kg/m^3$), and $\nu$ the kinematic viscosity ($0.01 m^2/s$). 
 
 **General Domain & Inlet Conditions:**
-All fluid experiments are simulated inside a rectangular channel of $1~m$ length (from $x=-0.2$ to $0.8$) and width $d = 0.4~m$. 
+All fluid experiments are simulated inside a rectangular channel of $1 m$ length (from $x=-0.2$ to $0.8$) and width $d = 0.4 m$. 
 
 To prevent gradient explosion caused by discontinuities at the corners, the inlet velocity ($u_{\text{inlet}}$) is modeled as a parabola ensuring the no-slip condition ($u=0$) at the walls:
 $$
@@ -42,7 +42,7 @@ $$
 u_{\text{inlet}} = u_{0}\left(1 - \left(\dfrac{y}{h_{max}}\right)^2\right)
 \end{equation*}
 $$
-where $u_0 = 1~m/s$ is the maximum velocity at the center and $h_{max} = 0.2~m$ is half the height of the channel.
+where $u_0 = 1 m/s$ is the maximum velocity at the center and $h_{max} = 0.2 m$ is half the height of the channel.
 
 ### Explored Geometries:
 Using this general framework, three different scenarios have been modeled:
