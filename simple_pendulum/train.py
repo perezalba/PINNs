@@ -10,6 +10,8 @@ from scipy.special import ellipj
 
 from networks import FCN, Siren
 
+from utils import get_analytical_pendulum
+
 class PendulumFCNN():
     """
     Class defined for configuring and training a Fully-Connected Neural
@@ -35,7 +37,7 @@ class PendulumFCNN():
         self.t_per = 2 * np.pi / self.w
 
         self.t = torch.linspace(0, self.n_osc * self.t_per, 500).view(-1, 1)
-        self.theta = self.analytical_pendulum(self.t)
+        self.theta = get_analytical_pendulum(self.t, self.w, self.theta0)
         
         indices = np.linspace(0, self.trn_part, self.trn_pts, dtype=int) 
         self.t_trn = self.t[indices]
@@ -45,23 +47,6 @@ class PendulumFCNN():
         self.model = FCN(N_INPUT=1, N_OUTPUT=1, N_HIDDEN=32, N_LAYERS=3)
 
         self.loss_history = []
-
-    def analytical_pendulum(self, t):
-        """
-        Computes exact analytical solution for the simple pendulum.
-
-        Args:
-            t (torch.Tensor): Time tensor for which to compute the solution.
-
-        Returns:
-            torch.Tensor: The analytical solution for the given time tensor.
-        """
-        k = np.sin(self.theta0 / 2)
-        t_np = t.detach().cpu().numpy()
-        u = self.w * (t_np + (np.pi / (2 * self.w)))
-        sn, cn, dn, ph = ellipj(u, k**2)
-        theta_np = 2 * np.arcsin(k * sn)
-        return torch.tensor(theta_np, dtype=torch.float32)
 
     def train(self):
         """
@@ -141,7 +126,7 @@ class PendulumPINN():
         self.t_per = 2 * np.pi / self.w
         
         self.t = torch.linspace(0, self.n_osc * self.t_per, 500).view(-1, 1)
-        self.theta = self.analytical_pendulum(self.t)
+        self.theta = get_analytical_pendulum(self.t, self.w, self.theta0)
         
         indices = np.linspace(0, self.trn_part, self.trn_pts, dtype=int) 
         self.t_trn = self.t[indices]
@@ -158,23 +143,6 @@ class PendulumPINN():
             self.model = FCN(N_INPUT=1, N_OUTPUT=1, N_HIDDEN=32, N_LAYERS=3)
 
         self.loss_history = []
-
-    def analytical_pendulum(self, t):
-        """
-        Computes exact analytical solution for the simple pendulum.
-
-        Args:
-            t (torch.Tensor): Time tensor for which to compute the solution.
-
-        Returns:
-            torch.Tensor: The analytical solution for the given time tensor.
-        """
-        k = np.sin(self.theta0 / 2)
-        t_np = t.detach().cpu().numpy()
-        u = self.w * (t_np + (np.pi / (2 * self.w)))
-        sn, cn, dn, ph = ellipj(u, k**2)
-        theta_np = 2 * np.arcsin(k * sn)
-        return torch.tensor(theta_np, dtype=torch.float32)
 
     def train(self):
         """
