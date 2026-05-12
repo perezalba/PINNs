@@ -28,8 +28,6 @@ class PendulumFCNN():
         self.model = FCN(N_INPUT=1, N_OUTPUT=1, N_HIDDEN=32, N_LAYERS=3)
 
         self.loss_history = []
-        self.pointwise_error = None
-        self.t_np = self.t.detach().cpu().numpy().flatten()
 
     def analytical_pendulum(self, t):
         k = np.sin(self.theta0 / 2)
@@ -57,34 +55,7 @@ class PendulumFCNN():
             if (i + 1) % 1000 == 0:
                 print(f"Epoch {i+1:5d} | MSE Loss: {loss.item():.4e}")
 
-        self.compute_pointwise_error()
         print("Training complete.")
-
-    def compute_pointwise_error(self):
-        self.model.eval()
-        with torch.no_grad():
-            theta_pred = self.model(self.t)
-            abs_diff = torch.abs(theta_pred - self.theta)
-            percent_error = (abs_diff / self.theta0) * 100.0
-            self.pointwise_error = percent_error.cpu().numpy().flatten()
-
-    def plot_pointwise_error(self):
-        if self.pointwise_error is None:
-            print("El model encara no està entrenat. Fes .train() primer.")
-            return
-
-        plt.figure(figsize=(10, 4))
-        plt.plot(self.t_np, self.pointwise_error, color='red', label='Error absolut de predicció (%)')
-        t_max_trn = self.t_trn.max().item()
-        plt.axvspan(0, t_max_trn, color='grey', alpha=0.15, label='Training Zone')
-        plt.axvspan(t_max_trn, self.t.max().item(), color='orange', alpha=0.05, label='Extrapolation Zone')
-        plt.title("Evolució de l'Error de Predicció en el Temps (FCNN)")
-        plt.xlabel("Temps (s)")
-        plt.ylabel("Error (% respecte l'amplitud)")
-        plt.legend(loc='upper left')
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
         
     def plot_result(self):
         self.model.eval()
@@ -140,8 +111,6 @@ class PendulumPINN():
             self.model = FCN(N_INPUT=1, N_OUTPUT=1, N_HIDDEN=32, N_LAYERS=3)
 
         self.loss_history = []
-        self.pointwise_error = None
-        self.t_np = self.t.detach().cpu().numpy().flatten()
 
     def analytical_pendulum(self, t):
         k = np.sin(self.theta0 / 2)
@@ -187,38 +156,7 @@ class PendulumPINN():
             if (i + 1) % 1000 == 0:
                 print(f"Epoch {i+1:5d} | Total Loss: {loss.item():.4e}")
 
-        self.compute_pointwise_error()
         print("Training complete.")
-
-    def compute_pointwise_error(self):
-        self.model.eval()
-        with torch.no_grad():
-            if self.use_siren:
-                theta_pred, _ = self.model(self.t)
-            else:
-                theta_pred = self.model(self.t)
-            
-            abs_diff = torch.abs(theta_pred - self.theta)
-            percent_error = (abs_diff / self.theta0) * 100.0
-            self.pointwise_error = percent_error.cpu().numpy().flatten()
-
-    def plot_pointwise_error(self):
-        if self.pointwise_error is None:
-            print("El model encara no està entrenat. Fes .train() primer.")
-            return
-
-        plt.figure(figsize=(10, 4))
-        plt.plot(self.t_np, self.pointwise_error, color='red', label='Error absolut de predicció (%)')
-        t_max_trn = self.t_trn.max().item()
-        plt.axvspan(0, t_max_trn, color='grey', alpha=0.15, label='Training Zone')
-        plt.axvspan(t_max_trn, self.t.max().item(), color='orange', alpha=0.05, label='Extrapolation Zone')
-        plt.title("Evolució de l'Error de Predicció en el Temps")
-        plt.xlabel("Temps (s)")
-        plt.ylabel("Error (% respecte l'amplitud)")
-        plt.legend(loc='upper left')
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
 
     def plot_result(self):
         with torch.no_grad():
