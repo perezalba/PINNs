@@ -1,7 +1,20 @@
+"""
+Main module to run the pendulum experiments.
+This script initializes the physical parameters and trains the different
+models (standard FCNN and PINNs with/without SIREN), showing the results.
+
+Usage:
+    python main.py
+"""
+
 import numpy as np
 from train import PendulumFCNN, PendulumPINN
 
 def main():
+    """
+    Main function to define hyperparameters and execute the training and 
+    visualization of all models sequentially.
+    """
     L = 1.0
     theta0 = np.pi / 4
     n_osc = 4

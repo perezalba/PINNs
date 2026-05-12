@@ -1,3 +1,8 @@
+"""
+Module responsible for handling the training loops of the pendulum models.
+Includes classes to train purely data-driven models (FCNN) and physics-informed models (PINN).
+"""
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +11,18 @@ from scipy.special import ellipj
 from networks import FCN, Siren
 
 class PendulumFCNN():
+    """
+    Class defined for configuring and training a Fully-Connected Neural
+    Network (FCNN) for predicting the dynamics of a simple pendulum.
+
+    Args:
+        L (float): Length of the pendulum in meters.
+        theta0 (float): Initial angle (amplitude) in radians.
+        n_osc (int): Number of complete oscillations to simulate.
+        trn_pts (int): Number of points used for training.
+        trn_part (int): Maximum index for training points.
+        epochs (int, optional): Number of training epochs. Defaults to 20000.
+    """
     def __init__(self, L, theta0, n_osc, trn_pts, trn_part, epochs=20000):
         self.L = L
         self.theta0 = theta0
@@ -30,6 +47,15 @@ class PendulumFCNN():
         self.loss_history = []
 
     def analytical_pendulum(self, t):
+        """
+        Computes exact analytical solution for the simple pendulum.
+
+        Args:
+            t (torch.Tensor): Time tensor for which to compute the solution.
+
+        Returns:
+            torch.Tensor: The analytical solution for the given time tensor.
+        """
         k = np.sin(self.theta0 / 2)
         t_np = t.detach().cpu().numpy()
         u = self.w * (t_np + (np.pi / (2 * self.w)))
@@ -38,6 +64,9 @@ class PendulumFCNN():
         return torch.tensor(theta_np, dtype=torch.float32)
 
     def train(self):
+        """
+        Trains the FCNN model using Mean Squared Error (MSE) loss on the training data.
+        """
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
         print(f"Starting standard FCNN training for {self.epochs} epochs.")
         
@@ -58,6 +87,10 @@ class PendulumFCNN():
         print("Training complete.")
         
     def plot_result(self):
+        """
+        Plots the analytical solution, the network's prediction, and the training 
+        data points, highlighting the training and extrapolation zones.
+        """
         self.model.eval()
         with torch.no_grad():
             theta_pred_final = self.model(self.t)
@@ -80,6 +113,20 @@ class PendulumFCNN():
         plt.show()
 
 class PendulumPINN():
+    """
+    Class to configure and train a Physics-Informed Neural Network (PINN) for a simple pendulum.
+    Allows choosing between a standard FCNN architecture or a SIREN architecture.
+
+    Args:
+        L (float): Length of the pendulum in meters.
+        theta0 (float): Initial angle (amplitude) in radians.
+        n_osc (int): Number of complete oscillations to simulate.
+        trn_pts (int): Number of points used for training.
+        trn_part (int): Maximum index for training points.
+        t_phys_pts (int): Number of collocation points used to evaluate the physics residual.
+        epochs (int, optional): Number of training epochs. Defaults to 6000.
+        use_siren (bool, optional): If True, uses the SIREN architecture instead of standard FCNN. Defaults to False.
+    """
     def __init__(self, L, theta0, n_osc, trn_pts, trn_part, t_phys_pts, epochs=6000, use_siren=False):
         self.L = L
         self.theta0 = theta0
@@ -113,6 +160,15 @@ class PendulumPINN():
         self.loss_history = []
 
     def analytical_pendulum(self, t):
+        """
+        Computes exact analytical solution for the simple pendulum.
+
+        Args:
+            t (torch.Tensor): Time tensor for which to compute the solution.
+
+        Returns:
+            torch.Tensor: The analytical solution for the given time tensor.
+        """
         k = np.sin(self.theta0 / 2)
         t_np = t.detach().cpu().numpy()
         u = self.w * (t_np + (np.pi / (2 * self.w)))
@@ -121,6 +177,11 @@ class PendulumPINN():
         return torch.tensor(theta_np, dtype=torch.float32)
 
     def train(self):
+        """
+        Executes the PINN training loop computing both the data loss (MSE on observed points) 
+        and the physics loss (residual of the pendulum differential equation on collocation points).
+        Calculates and prints the final RMSE over the entire trajectory.
+        """
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=1000, min_lr=1e-5)
 
@@ -159,6 +220,10 @@ class PendulumPINN():
         print("Training complete.")
 
     def plot_result(self):
+        """
+        Plots the analytical solution, the network's prediction, and the training data points,
+        highlighting the training and extrapolation zones.
+        """
         with torch.no_grad():
             if self.use_siren:
                 theta_pred_final, _ = self.model(self.t)
