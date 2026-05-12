@@ -37,11 +37,13 @@ Where $u$ is the horizontal velocity, $v$ the vertical velocity, $p$ the pressur
 All fluid experiments are simulated inside a rectangular channel of $1 m$ length (from $x=-0.2$ to $0.8$) and width $d = 0.4 m$. 
 
 To prevent gradient explosion caused by discontinuities at the corners, the inlet velocity ($u_{\text{inlet}}$) is modeled as a parabola ensuring the no-slip condition ($u=0$) at the walls:
+
 $$
 \begin{equation*}
 u_{\text{inlet}} = u_{0}\left(1 - \left(\dfrac{y}{h_{max}}\right)^2\right)
 \end{equation*}
 $$
+
 where $u_0 = 1 m/s$ is the maximum velocity at the center and $h_{max} = 0.2 m$ is half the height of the channel.
 
 ### Explored Geometries:
