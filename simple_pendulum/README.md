@@ -10,4 +10,4 @@ with the initial conditions
 $$
 \theta(0) = \theta_0~~,~~\dot{\theta}(0)=0~.
 $$
-We incorporate two types of PINNs: the standard one using a Fully Connected Neural Network (FCNN) and a Sinusoidal Representations Network (SIREN) Neural Network. The second should improve the predictions for higher frequency oscillations. Code for SIREN neural network is not mine, credits to Vincent Sitzmann ($\texttt{vsitzmann}$ on github).
+We incorporate two types of PINNs: the standard one using a Fully Connected Neural Network (FCNN) and a Sinusoidal Representations Network (SIREN) Neural Network. The second should improve the predictions for higher frequency oscillations. Credits to Vincent Sitzmann ($\texttt{vsitzmann}$ on github) for the definition of the SIREN neural network, and to Ben Moseley for the definition of the standard FCNN.
