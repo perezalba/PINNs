@@ -1,8 +1,23 @@
+"""
+Utility module for analytical solutions and plotting functions
+for the Navier-Stokes PINN simulations.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 def plot_flow_fields_rectangle(samples, result, obs_coords):
+    """
+    Plots the spatial distribution of velocity (u, v) and pressure (p)
+    around a rectangular obstacle.
+
+    Args:
+        samples (numpy.ndarray): Spatial coordinates (x, y).
+        result (numpy.ndarray): Model predictions [u, v, p].
+        obs_coords (tuple): Tuple containing (x_bottom_left, y_bottom_left, width, height)
+                            for the rectangular obstacle patch.
+    """
     magnituds = [r"Velocity $u$ (m/s)", r"Velocity $v$ (m/s)", r"Pressure $p$ (Pa)"]
 
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(12, 10), sharex=True, dpi=150)
