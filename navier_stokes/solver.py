@@ -1,8 +1,22 @@
+"""
+Module containing the Physics-Informed Neural Network (PINN) definition
+for solving the 2D Navier-Stokes equations using DeepXDE.
+"""
+
 import tensorflow as tf
 import deepxde as dde
 import numpy as np
 
 class FluidPINN:
+    """
+    PINN Solver for 2D newtonian incompressible fluid flow in a rectangular channel.
+
+    Args:
+        rho (float): Density of the fluid. Defaults to 1.0.
+        mu (float): Dynamic viscosity of the fluid. Defaults to 0.01.
+        u_max (float): Maximum inlet velocity. Defaults to 1.0.
+        h_max (float): Half-height of the channel (distance from center to wall). Defaults to 0.2.
+    """
     def __init__(self, rho=1.0, mu=0.01, u_max=1.0, h_max=0.2):
         self.rho = rho
         self.mu = mu
@@ -17,6 +31,16 @@ class FluidPINN:
         return self.u_max * (1 - (y / self.h_max) ** 2)
 
     def _pde(self, X, Y):
+        """
+        Defines the 2D Navier-Stokes equations and continuity equation.
+
+        Args:
+            X: Input coordinates [x, y].
+            Y: Network output [u, v, p].
+
+        Returns:
+            list: Residuals of [u-momentum, v-momentum, continuity].
+        """
         du_x = dde.grad.jacobian(Y, X, i=0, j=0)
         du_y = dde.grad.jacobian(Y, X, i=0, j=1)
         dv_x = dde.grad.jacobian(Y, X, i=1, j=0)
@@ -36,8 +60,17 @@ class FluidPINN:
         return [pde_u, pde_v, pde_cont]
 
     def build_and_train(self, iterations=10000, save_path="pinn_no_obstacle_model"):
+        """
+        Sets up the geometry, boundary conditions, network architecture, and trains the model.
+
+        Args:
+            iterations (int, optional): Number of Adam training iterations. Defaults to 10000.
+            save_path (str, optional): Path prefix to save the model. Defaults to "pinn_no_obstacle_model".
+        """
+        # Define geometry
         self.geom = dde.geometry.Rectangle(xmin=[-0.2, -self.h_max], xmax=[0.8, self.h_max])
 
+        # Define boundary functions
         def boundary_wall(X, on_boundary):
             return on_boundary and np.logical_or(
                 np.isclose(X[1], -self.h_max, rtol=1e-05, atol=1e-08),
@@ -50,12 +83,14 @@ class FluidPINN:
         def boundary_outlet(X, on_boundary):
             return on_boundary and np.isclose(X[0], 0.8, rtol=1e-05, atol=1e-08)
 
+        # Apply Boundary Conditions
         bc_wall_u = dde.icbc.DirichletBC(self.geom, lambda X: 0.0, boundary_wall, component=0)
         bc_wall_v = dde.icbc.DirichletBC(self.geom, lambda X: 0.0, boundary_wall, component=1)
         bc_inlet_u = dde.icbc.DirichletBC(self.geom, self._u_inlet, boundary_inlet, component=0)
         bc_inlet_v = dde.icbc.DirichletBC(self.geom, lambda X: 0.0, boundary_inlet, component=1)
         bc_outlet_p = dde.icbc.DirichletBC(self.geom, lambda X: 0.0, boundary_outlet, component=2)
 
+        # Data preparation
         data = dde.data.PDE(
             self.geom,
             self._pde,
@@ -64,9 +99,11 @@ class FluidPINN:
             num_boundary=500
         )
 
+        # Define neural network
         net = dde.nn.FNN([2] + [64] * 5 + [3], "tanh", "Glorot uniform")
         self.model = dde.Model(data, net)
 
+        # Compile and train (Adam -> L-BFGS)
         self.model.compile("adam", lr=1e-3)
         print("Starting Adam optimization...")
         self.model.train(iterations=iterations)
@@ -79,6 +116,15 @@ class FluidPINN:
         print(f"Model saved to {save_path}")
 
     def predict(self, X):
+        """
+        Evaluates the trained network at given points.
+
+        Args:
+            X (numpy.ndarray): Coordinate points array.
+
+        Returns:
+            numpy.ndarray: Predictions [u, v, p].
+        """
         if self.model is None:
             raise ValueError("Model is not trained yet. Call build_and_train() first.")
         return self.model.predict(X)
