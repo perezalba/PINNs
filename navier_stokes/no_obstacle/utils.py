@@ -56,6 +56,10 @@ def plot_flow_fields(samples, result):
     axes[-1].set_xlabel("x")
 
     plt.tight_layout()
+
+    plt.savefig("poiseuille_flow_fields.png", dpi=300, bbox_inches='tight')
+    print("Saved: poiseuille_flow_fields.png")
+
     plt.show()
 
 def plot_velocity_profile(y_eval, u_pred, y_teoric, u_teoric, x_eval, H):
@@ -85,4 +89,9 @@ def plot_velocity_profile(y_eval, u_pred, y_teoric, u_teoric, x_eval, H):
     plt.grid(True, linestyle=':', alpha=0.6)
 
     plt.tight_layout()
+
+    file_name = f"poiseuille_profile_x_{x_eval}.png"
+    plt.savefig(file_name, dpi=300, bbox_inches='tight')
+    print(f"Saved: {file_name}")
+
     plt.show()
