@@ -24,7 +24,6 @@ def main():
 
     # 3. Generate Evaluation Points and Predict
     print("\n=== Generating Flow Fields Plot ===")
-    # Agafem punts dins la geometria (ja respecta la resta CSG del cilindre)
     samples = pinn_solver.geom.random_points(500000)
     result = pinn_solver.predict(samples)
 

@@ -45,5 +45,10 @@ def plot_flow_fields_cylinder(samples, result, R):
         cbar.set_label(magnituds[idx])
 
     axes[-1].set_xlabel("x")
-    plt.tight_layout()    
+    plt.tight_layout()  
+
+    file_name = "cylinder_flow_fields.png"
+    plt.savefig(file_name, dpi=300, bbox_inches='tight')
+    print(f"Saved: {file_name}")
+
     plt.show()
