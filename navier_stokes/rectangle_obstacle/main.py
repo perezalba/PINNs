@@ -2,8 +2,8 @@
 Main entry point for running the Navier-Stokes PINN simulation with a rectangular obstacle.
 """
 
-from navier_stokes.rectangle_obstacle.solver import RectanglePINN
-from navier_stokes.rectangle_obstacle.utils import plot_flow_fields_rectangle
+from solver import RectanglePINN
+from utils import plot_flow_fields_rectangle
 
 def main():
     # 1. Configuration Parameters

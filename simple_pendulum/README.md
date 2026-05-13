@@ -33,7 +33,7 @@ To solve this ODE and predict the trajectory $\theta(t)$ over time, we implement
 ## Training Strategy
 The models are trained using a composite loss function that combines:
 - **Data Loss:** Mean Squared Error (MSE) comparing the network's prediction with a small set of exact analytical data points during the initial training phase.
-- **Physics Loss:** The residual of the ODE $\left(\ddot{\theta}_{pred} + \omega^2\sin\theta_{pred}\right)$ evaluated at a dense set of physical collocation points across the entire time domain.
+- **Physics Loss:** The residual of the ODE $\left(\ddot{\theta}_{\text{pred}} + \omega^2\sin\theta_{\text{pred}}\right)$ evaluated at a dense set of physical collocation points across the entire time domain.
 
 ## Acknowledgments
 - Credits to **Vincent Sitzmann** (`vsitzmann` on GitHub) for the formulation and original implementation ideas of the SIREN neural network architecture.

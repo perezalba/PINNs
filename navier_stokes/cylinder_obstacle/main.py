@@ -2,8 +2,8 @@
 Main module to run the Navier-Stokes PINN simulation with a cylinder.
 """
 
-from navier_stokes.cylinder_obstacle.solver import CylinderPINN
-from navier_stokes.cylinder_obstacle.utils import plot_flow_fields_cylinder
+from solver import CylinderPINN
+from utils import plot_flow_fields_cylinder
 
 def main():
     # 1. Configuration Parameters

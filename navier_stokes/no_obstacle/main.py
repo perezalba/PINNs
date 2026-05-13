@@ -3,8 +3,8 @@ Main module to run the Navier-Stokes PINN simulation.
 """
 
 import numpy as np
-from navier_stokes.no_obstacle.solver import FluidPINN
-from navier_stokes.no_obstacle.utils import plot_flow_fields, plot_velocity_profile, get_poiseuille_velocity
+from solver import FluidPINN
+from utils import plot_flow_fields, plot_velocity_profile, get_poiseuille_velocity
 
 def main():
     # 1. Configuration & Physical Parameters
