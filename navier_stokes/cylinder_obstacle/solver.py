@@ -25,56 +25,6 @@ class CylinderPINN:
         self.u_max = u_max
         self.h_max = h_max
         
-        self.geom = None
-        self.model = None
-
-    def _u_inlet(self, X):
-        y = X[:, 1:2]
-        return self.u_max * (1 - (y / self.h_max) ** 2)
-
-    def _pde(self, X, Y):
-        """
-        Defines the Navier-Stokes equations for incompressible flow in 2D
-        using kinematic viscosity.
-
-        Args:
-            X: Input coordinates [x, y].
-            Y: Network output [u, v, p].
-
-        Returns:
-            list: Residuals of [continuity, x-momentum, y-momentum].
-        """
-        u = Y[:, 0:1]
-        v = Y[:, 1:2]
-
-        u_x = dde.grad.jacobian(Y, X, i=0, j=0)
-        u_y = dde.grad.jacobian(Y, X, i=0, j=1)
-        v_x = dde.grad.jacobian(Y, X, i=1, j=0)
-        v_y = dde.grad.jacobian(Y, X, i=1, j=1)
-        p_x = dde.grad.jacobian(Y, X, i=2, j=0)
-        p_y = dde.grad.jacobian(Y, X, i=2, j=1)
-
-        u_xx = dde.grad.hessian(Y, X, component=0, i=0, j=0)
-        u_yy = dde.grad.hessian(Y, X, component=0, i=1, j=1)
-        v_xx = dde.grad.hessian(Y, X, component=1, i=0, j=0)
-        v_yy = dde.grad.hessian(Y, X, component=1, i=1, j=1)
-
-        continuity = u_x + v_y
-        momentum_x = u * u_x + v * u_y + p_x - self.nu * (u_xx + u_yy)
-        momentum_y = u * v_x + v * v_y + p_y - self.nu * (v_xx + v_yy)
-
-        return [continuity, momentum_x, momentum_y]
-
-    def build_and_train(self, iter_adam1=10000, iter_adam2=15000, save_path="pinn_cylinder_model"):
-        """
-        Sets up the geometry, obstacle, anchors, boundary conditions, and trains the model 
-        using a multi-stage approach (Adam high LR -> Adam low LR -> L-BFGS).
-
-        Args:
-            iter_adam1 (int): Iterations for the first Adam optimizer phase. Defaults to 10000.
-            iter_adam2 (int): Iterations for the second Adam optimizer phase. Defaults to 15000.
-            save_path (str): File prefix to save the model. Defaults to "pinn_cylinder_model".
-        """
         # Define geometry with CSG difference
         geom_rect = dde.geometry.Rectangle(xmin=[-0.2, -0.2], xmax=[0.8, 0.2])
         geom_cyl = dde.geometry.Disk([0.0, 0.0], self.R)
@@ -125,23 +75,82 @@ class CylinderPINN:
         net = dde.nn.FNN([2] + [64]*5 + [3], "tanh", "Glorot uniform")
         self.model = dde.Model(data, net)
 
+    def _u_inlet(self, X):
+        y = X[:, 1:2]
+        return self.u_max * (1 - (y / self.h_max) ** 2)
+
+    def _pde(self, X, Y):
+        """
+        Defines the Navier-Stokes equations for incompressible flow in 2D
+        using kinematic viscosity.
+
+        Args:
+            X: Input coordinates [x, y].
+            Y: Network output [u, v, p].
+
+        Returns:
+            list: Residuals of [continuity, x-momentum, y-momentum].
+        """
+        u = Y[:, 0:1]
+        v = Y[:, 1:2]
+
+        u_x = dde.grad.jacobian(Y, X, i=0, j=0)
+        u_y = dde.grad.jacobian(Y, X, i=0, j=1)
+        v_x = dde.grad.jacobian(Y, X, i=1, j=0)
+        v_y = dde.grad.jacobian(Y, X, i=1, j=1)
+        p_x = dde.grad.jacobian(Y, X, i=2, j=0)
+        p_y = dde.grad.jacobian(Y, X, i=2, j=1)
+
+        u_xx = dde.grad.hessian(Y, X, component=0, i=0, j=0)
+        u_yy = dde.grad.hessian(Y, X, component=0, i=1, j=1)
+        v_xx = dde.grad.hessian(Y, X, component=1, i=0, j=0)
+        v_yy = dde.grad.hessian(Y, X, component=1, i=1, j=1)
+
+        continuity = u_x + v_y
+        momentum_x = u * u_x + v * u_y + p_x - self.nu * (u_xx + u_yy)
+        momentum_y = u * v_x + v * v_y + p_y - self.nu * (v_xx + v_yy)
+
+        return [continuity, momentum_x, momentum_y]
+
+    def build_and_train(self, iter_adam1=10000, iter_adam2=15000, save_path="pinn_cylinder_model"):
+        """
+        Trains and saves the model using a multi-stage approach (Adam high LR -> Adam low LR -> L-BFGS).
+
+        Args:
+            iter_adam1 (int): Iterations for the first Adam optimizer phase. Defaults to 10000.
+            iter_adam2 (int): Iterations for the second Adam optimizer phase. Defaults to 15000.
+            save_path (str): File prefix to save the model. Defaults to "pinn_cylinder_model".
+        """
+        
         # Custom loss weights (3 PDEs + 7 BCs = 10 weights)
         weights = [1.0, 1.0, 1.0, 5.0, 5.0, 1.0, 5.0, 5.0, 20.0, 20.0]
+
+        autosave = dde.callbacks.ModelCheckpoint(
+            f"{save_path}_autosave.h5", 
+            verbose=1, 
+            save_better_only=True, 
+            period=1000
+        )
 
         # Training Phase 1: Adam high LR
         print(f"Starting Adam optimization (Phase 1, lr=1e-3, {iter_adam1} iter)...")
         self.model.compile("adam", lr=1e-3, loss_weights=weights)
-        self.model.train(iterations=iter_adam1)
+        self.model.train(iterations=iter_adam1, callbacks=[autosave])
+        self.model.save(save_path)
+        print(f"Model saved after Phase 1 with prefix: {save_path}")
 
         # Training Phase 2: Adam low LR
         print(f"Starting Adam optimization (Phase 2, lr=5e-4, {iter_adam2} iter)...")
         self.model.compile("adam", lr=5e-4, loss_weights=weights)
-        self.model.train(iterations=iter_adam2)
+        self.model.train(iterations=iter_adam2, callbacks=[autosave])
+        self.model.save(save_path)
+        print(f"Model saved after Phase 2 with prefix: {save_path}")
 
         # Training Phase 3: L-BFGS
         print("Starting L-BFGS optimization (Phase 3)...")
+        dde.optimizers.config.set_LBFGS_options(maxiter=2500)
         self.model.compile("L-BFGS")
-        self.model.train()
+        self.model.train(callbacks=[autosave])
 
         # Save model
         if save_path:
@@ -158,6 +167,4 @@ class CylinderPINN:
         Returns:
             numpy.ndarray: Predictions [u, v, p].
         """
-        if self.model is None:
-            raise ValueError("Model is not trained yet.")
         return self.model.predict(X)
