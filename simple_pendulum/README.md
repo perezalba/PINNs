@@ -1,4 +1,4 @@
-# 1D Simple Pendulum: Standard PINNs vs. SIREN
+# 1D Simple Pendulum
 
 ## Problem overview
 
@@ -34,6 +34,23 @@ To solve this ODE and predict the trajectory $\theta(t)$ over time, we implement
 The models are trained using a composite loss function that combines:
 - **Data Loss:** Mean Squared Error (MSE) comparing the network's prediction with a small set of exact analytical data points during the initial training phase.
 - **Physics Loss:** The residual of the ODE $\left(\ddot{\theta}_{\text{pred}} + \omega^2\sin\theta_{\text{pred}}\right)$ evaluated at a dense set of physical collocation points across the entire time domain.
+
+## Experiment Design: Testing Spectral Bias
+To explicitly demonstrate the *spectral bias* of standard architectures versus the capabilities of SIREN, the project includes an automated experimental pipeline:
+- We fix a **constant time window** ($t_{\text{max}} = 0.8$ seconds) for all models.
+- We run sequential training experiments requiring the network to learn $N$ complete oscillations (e.g., $N=2, 4, 8$) within this same time window.
+- To achieve this physically, the pipeline dynamically adjusts the pendulum's length ($L$) and angular frequency ($\omega$) for each experiment. 
+
+This setup clearly visualizes how standard PINNs fail to capture high-frequency dynamics as the oscillations become denser, while the SIREN architecture maintains high predictive accuracy.
+
+## Usage & Outputs
+To run the full suite of experiments (Standard FCNN, Standard PINN, and SIREN PINN), simply execute the main script:
+
+```bash
+python main.py
+```
+
+The script will sequentially train a new model for each target frequency. Once the training loops are completed, the pipeline generates comparative plots for each architecture and saves them as high-resolution `.png` files inside the `plots/` directory.
 
 ## Acknowledgments
 - Credits to **Vincent Sitzmann** (`vsitzmann` on GitHub) for the formulation and original implementation ideas of the SIREN neural network architecture.
