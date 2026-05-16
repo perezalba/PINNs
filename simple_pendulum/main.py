@@ -2,40 +2,53 @@
 Main module to run the pendulum experiments.
 This script initializes the physical parameters and trains the different
 models (standard FCNN and PINNs with/without SIREN), showing the results.
-
-Usage:
-    python main.py
 """
 
 import numpy as np
 from train import PendulumFCNN, PendulumPINN
+from utils import plot_results
 
 def main():
     """
     Main function to define hyperparameters and execute the training and 
     visualization of all models sequentially.
     """
-    L = 0.01
     theta0 = 0.6
-    n_osc = 4
     trn_pts = 50
     trn_part = 100
     t_phys_pts = 200
 
-    print("=== FCNN estàndard ===")
-    model_fcnn = PendulumFCNN(L, theta0, n_osc, trn_pts, trn_part, epochs=2000)
-    model_fcnn.train()
-    model_fcnn.plot_result()
+    print("\nStandard FCNN")
+    results_fcnn = []
+    n_osc_list = [4, 8, 12]
+    for n in n_osc_list:
+        print(f"\n-> Training FCNN for {n} oscillations...")
+        model = PendulumFCNN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, epochs=10000)
+        model.train()
+        results_fcnn.append(model.get_plot_data())
+        
+    plot_results(results_fcnn, "Standard FCNN", "fcnn_standard_results.png")
 
-    print("\n=== PINN (sense SIREN) ===")
-    model_pinn_standard = PendulumPINN(L, theta0, n_osc, trn_pts, trn_part, t_phys_pts, epochs=4000, use_siren=False)
-    model_pinn_standard.train()
-    model_pinn_standard.plot_result()
+    print("\nPINN (without SIREN)")
+    results_pinn_std = []
+    n_osc_list_pinn_std = [4,5,8]
+    for n in n_osc_list_pinn_std:
+        print(f"\n-> Training PINN (without SIREN) for {n} oscillations...")
+        model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=20000, use_siren=False)
+        model.train()
+        results_pinn_std.append(model.get_plot_data())
+        
+    plot_results(results_pinn_std, "Standard PINN", "pinn_standard_results.png")
 
-    print("\n=== PINN (amb SIREN) ===")
-    model_pinn_siren = PendulumPINN(L, theta0, n_osc, trn_pts, trn_part, t_phys_pts, epochs=4000, use_siren=True)
-    model_pinn_siren.train()
-    model_pinn_siren.plot_result()
+    print("\nPINN (with SIREN)")
+    results_pinn_siren = []
+    for n in n_osc_list:
+        print(f"\n-> Training PINN (SIREN) for {n} oscillations...")
+        model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=4000, use_siren=True)
+        model.train()
+        results_pinn_siren.append(model.get_plot_data())
+        
+    plot_results(results_pinn_siren, "SIREN PINN", "pinn_siren_results.png")
 
 if __name__ == "__main__":
     main()

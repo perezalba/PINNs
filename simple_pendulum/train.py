@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from scipy.special import ellipj
 
 from networks import FCN, Siren
-
 from utils import get_analytical_pendulum
 
 class PendulumFCNN():
@@ -18,25 +17,26 @@ class PendulumFCNN():
     Network (FCNN) for predicting the dynamics of a simple pendulum.
 
     Args:
-        L (float): Length of the pendulum in meters.
         theta0 (float): Initial angle (amplitude) in radians.
-        n_osc (int): Number of complete oscillations to simulate.
+        n_osc (int): Number of complete oscillations to fit in t_max.
         trn_pts (int): Number of points used for training.
         trn_part (int): Maximum index for training points.
+        t_max (float): Total time of the simulation window. Defaults to 0.8.
         epochs (int, optional): Number of training epochs. Defaults to 20000.
     """
-    def __init__(self, L, theta0, n_osc, trn_pts, trn_part, epochs=20000):
-        self.L = L
+    def __init__(self, theta0, n_osc, trn_pts, trn_part, t_max=0.8, epochs=20000):
         self.theta0 = theta0
         self.n_osc = n_osc
+        self.t_max = t_max
         self.trn_pts = trn_pts
         self.trn_part = trn_part
         self.epochs = epochs
         
-        self.w = np.sqrt(9.81 / self.L)
-        self.t_per = 2 * np.pi / self.w
+        self.t_per = self.t_max / self.n_osc
+        self.w = 2 * np.pi / self.t_per
+        self.L = 9.81 / (self.w ** 2)
 
-        self.t = torch.linspace(0, self.n_osc * self.t_per, 500).view(-1, 1)
+        self.t = torch.linspace(0, self.t_max, 500).view(-1, 1)
         self.theta = get_analytical_pendulum(self.t, self.w, self.theta0)
         
         indices = np.linspace(0, self.trn_part, self.trn_pts, dtype=int) 
@@ -71,68 +71,64 @@ class PendulumFCNN():
 
         print("Training complete.")
         
-    def plot_result(self):
+    def get_plot_data(self):
         """
-        Plots the analytical solution, the network's prediction, and the training 
-        data points, highlighting the training and extrapolation zones.
+        Evaluates the trained model on the full time range and returns a dictionary with 
+        the evaluation results.
         """
         self.model.eval()
         with torch.no_grad():
-            theta_pred_final = self.model(self.t)
-        
-        plt.figure(figsize=(10, 4))
-        plt.plot(self.t.numpy(), self.theta.numpy(), label="Analytical Solution", color='blue', alpha=0.3, lw=2)
-        plt.plot(self.t.numpy(), theta_pred_final.numpy(), label="FCNN Prediction", color='blue', linestyle='--')
-        plt.scatter(self.t_trn.numpy(), self.theta_trn.numpy(), color='red', s=30, label='Training Data', zorder=5)
-
-        t_max_trn = self.t_trn.max().item()
-        plt.axvspan(0, t_max_trn, color='grey', alpha=0.15, label='Training Zone')
-        plt.axvspan(t_max_trn, self.t.max().item(), color='orange', alpha=0.05, label='Extrapolation Zone')
-        
-        plt.title("Standard FCNN Results")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Theta (rad)")
-        plt.legend(loc='upper right')
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
+            if hasattr(self, 'use_siren') and self.use_siren:
+                theta_pred, _ = self.model(self.t)
+            else:
+                theta_pred = self.model(self.t)
+                
+        return {
+            't': self.t.numpy(),
+            'theta_exact': self.theta.numpy(),
+            't_trn': self.t_trn.numpy(),
+            'theta_trn': self.theta_trn.numpy(),
+            'theta_pred': theta_pred.numpy(),
+            'n_osc': self.n_osc,
+            'L': self.L
+        }
 
 class PendulumPINN():
     """
-    Class to configure and train a Physics-Informed Neural Network (PINN) for a simple pendulum.
-    Allows choosing between a standard FCNN architecture or a SIREN architecture.
-
+    Class to configure and train a Physics-Informed Neural Network (PINN).
+    
     Args:
-        L (float): Length of the pendulum in meters.
         theta0 (float): Initial angle (amplitude) in radians.
-        n_osc (int): Number of complete oscillations to simulate.
+        n_osc (int): Number of complete oscillations to fit in t_max.
         trn_pts (int): Number of points used for training.
         trn_part (int): Maximum index for training points.
-        t_phys_pts (int): Number of collocation points used to evaluate the physics residual.
+        t_phys_pts (int): Number of collocation points.
+        t_max (float): Total time of the simulation window. Defaults to 0.8.
         epochs (int, optional): Number of training epochs. Defaults to 6000.
-        use_siren (bool, optional): If True, uses the SIREN architecture instead of standard FCNN. Defaults to False.
+        use_siren (bool, optional): If True, uses SIREN. Defaults to False.
     """
-    def __init__(self, L, theta0, n_osc, trn_pts, trn_part, t_phys_pts, epochs=6000, use_siren=False):
-        self.L = L
+    def __init__(self, theta0, n_osc, trn_pts, trn_part, t_phys_pts, t_max=0.8, epochs=6000, use_siren=False):
         self.theta0 = theta0
         self.n_osc = n_osc
+        self.t_max = t_max
         self.trn_pts = trn_pts
         self.trn_part = trn_part
         self.t_phys_pts = t_phys_pts
         self.epochs = epochs
         self.use_siren = use_siren
         
-        self.w = np.sqrt(9.81 / self.L)
-        self.t_per = 2 * np.pi / self.w
+        self.t_per = self.t_max / self.n_osc
+        self.w = 2 * np.pi / self.t_per
+        self.L = 9.81 / (self.w ** 2)
         
-        self.t = torch.linspace(0, self.n_osc * self.t_per, 500).view(-1, 1)
+        self.t = torch.linspace(0, self.t_max, 500).view(-1, 1)
         self.theta = get_analytical_pendulum(self.t, self.w, self.theta0)
         
         indices = np.linspace(0, self.trn_part, self.trn_pts, dtype=int) 
         self.t_trn = self.t[indices]
         self.theta_trn = self.theta[indices]
         
-        self.t_physics = torch.linspace(0, self.n_osc * self.t_per, self.t_phys_pts).unsqueeze(1)
+        self.t_physics = torch.linspace(0, self.t_max, self.t_phys_pts).unsqueeze(1)
         self.t_physics.requires_grad_(True)
         
         torch.manual_seed(123)
@@ -146,9 +142,7 @@ class PendulumPINN():
 
     def train(self):
         """
-        Executes the PINN training loop computing both the data loss (MSE on observed points) 
-        and the physics loss (residual of the pendulum differential equation on collocation points).
-        Calculates and prints the final RMSE over the entire trajectory.
+        Executes the PINN training loop computing both the data loss and physics loss.
         """
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=1000, min_lr=1e-5)
@@ -187,30 +181,24 @@ class PendulumPINN():
 
         print("Training complete.")
 
-    def plot_result(self):
+    def get_plot_data(self):
         """
-        Plots the analytical solution, the network's prediction, and the training data points,
-        highlighting the training and extrapolation zones.
+        Evaluates the trained model on the full time range and returns a dictionary with 
+        the evaluation results.
         """
+        self.model.eval()
         with torch.no_grad():
-            if self.use_siren:
-                theta_pred_final, _ = self.model(self.t)
+            if hasattr(self, 'use_siren') and self.use_siren:
+                theta_pred, _ = self.model(self.t)
             else:
-                theta_pred_final = self.model(self.t)
-        
-        plt.figure(figsize=(10, 4))
-        plt.plot(self.t.numpy(), self.theta.numpy(), label="Analytical Solution", color='blue', alpha=0.3, lw=2)
-        plt.plot(self.t.numpy(), theta_pred_final.numpy(), label="PINN Prediction", color='blue', linestyle='--')
-        plt.scatter(self.t_trn.numpy(), self.theta_trn.numpy(), color='red', s=30, label='Training Data', zorder=5)
-
-        t_max_trn = self.t_trn.max().item()
-        plt.axvspan(0, t_max_trn, color='grey', alpha=0.15, label='Training Zone')
-        plt.axvspan(t_max_trn, self.t.max().item(), color='orange', alpha=0.05, label='Extrapolation Zone')
-        
-        plt.title(f"PINN Results (SIREN: {self.use_siren})")
-        plt.xlabel("Time (s)")
-        plt.ylabel("Theta (rad)")
-        plt.legend(loc='upper right')
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
+                theta_pred = self.model(self.t)
+                
+        return {
+            't': self.t.numpy(),
+            'theta_exact': self.theta.numpy(),
+            't_trn': self.t_trn.numpy(),
+            'theta_trn': self.theta_trn.numpy(),
+            'theta_pred': theta_pred.numpy(),
+            'n_osc': self.n_osc,
+            'L': self.L
+        }
