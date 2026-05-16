@@ -34,7 +34,7 @@ def main():
     n_osc_list_pinn_std = [4,5,8]
     for n in n_osc_list_pinn_std:
         print(f"\n-> Training PINN (without SIREN) for {n} oscillations...")
-        model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=20000, use_siren=False)
+        model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=30000, use_siren=False)
         model.train()
         results_pinn_std.append(model.get_plot_data())
         
