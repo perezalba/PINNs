@@ -29,7 +29,7 @@ def plot_flow_fields(samples, result):
         result (numpy.ndarray): Model predictions [u, v, p] at the sample points.
     """
     color_legend = [[0, 1.1], [-0.05, 0.05], [0, 0.6]]
-    magnituds = [r"Velocity $u$ (m/s)", r"Velocity $v$ (m/s)", r"Pressure $p$ (Pa)"]
+    magnituds = [r"Velocity $u$", r"Velocity $v$", r"Pressure $p$"]
 
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(15, 9), sharex=True)
 

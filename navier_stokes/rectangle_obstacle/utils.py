@@ -18,7 +18,7 @@ def plot_flow_fields_rectangle(samples, result, obs_coords):
         obs_coords (tuple): Tuple containing (x_bottom_left, y_bottom_left, width, height)
                             for the rectangular obstacle patch.
     """
-    magnituds = [r"Velocity $u$ (m/s)", r"Velocity $v$ (m/s)", r"Pressure $p$ (Pa)"]
+    magnituds = [r"Velocity $u$", r"Velocity $v$", r"Pressure $p$"]
 
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(12, 10), sharex=True, dpi=150)
 

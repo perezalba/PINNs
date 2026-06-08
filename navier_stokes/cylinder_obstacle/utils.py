@@ -17,7 +17,7 @@ def plot_flow_fields_cylinder(samples, result, R):
         result (numpy.ndarray): Model predictions [u, v, p].
         R (float): Radius of the cylinder to draw the obstacle patch.
     """
-    magnituds = [r"Velocity $u$ (m/s)", r"Velocity $v$ (m/s)", r"Pressure $p$ (Pa)"]
+    magnituds = [r"Velocity $u$", r"Velocity $v$", r"Pressure $p$"]
 
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(12, 10), sharex=True, dpi=150)
 
