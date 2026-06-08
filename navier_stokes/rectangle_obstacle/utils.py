@@ -49,4 +49,9 @@ def plot_flow_fields_rectangle(samples, result, obs_coords):
 
     axes[-1].set_xlabel("x")
     plt.tight_layout()    
+
+    file_name = "rectangle_flow_fields.png"
+    plt.savefig(file_name, dpi=300, bbox_inches='tight')
+    print(f"Saved: {file_name}")
+
     plt.show()
