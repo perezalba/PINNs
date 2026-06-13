@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import csv
 from scipy.special import ellipj
 
 def get_analytical_pendulum(t, w, theta0):
@@ -32,6 +33,51 @@ def get_analytical_pendulum(t, w, theta0):
     theta_np = 2 * np.arcsin(k * sn)
     return torch.tensor(theta_np, dtype=torch.float32)
 
+def save_simulation_errors(y_true, y_pred, trn_part, model_name, n_osc, filename="simulation_errors.csv", out_dir="results"):
+    """
+    Computes the RMSE and NRMSE for the training and test sets 
+    and saves the results in a CSV file.
+
+    Args:
+        y_true (numpy.ndarray): Analytical solution values.
+        y_pred (numpy.ndarray): Model predictions.
+        trn_part (int): Index that separates the training zone from the test zone.
+        model_name (str): Name of the model (e.g., "FCNN", "PINN_std", "PINN_SIREN").
+        n_osc (int): Number of oscillations for this simulation.
+        filename (str): Name of the file where to save the data.
+        out_dir (str): Folder where to save the file.
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    filepath = os.path.join(out_dir, filename)
+
+    y_true_train, y_pred_train = y_true[:trn_part], y_pred[:trn_part]
+    y_true_test, y_pred_test = y_true[trn_part:], y_pred[trn_part:]
+
+    rmse_train = np.sqrt(np.mean((y_true_train - y_pred_train)**2))
+    rmse_test = np.sqrt(np.mean((y_true_test - y_pred_test)**2))
+
+    val_range = y_true.max() - y_true.min()
+
+    nrmse_train = rmse_train / val_range
+    nrmse_test = rmse_test / val_range
+
+    file_exists = os.path.isfile(filepath)
+    
+    with open(filepath, mode='a', newline='') as csvfile:
+        fieldnames = ['Model', 'n_osc', 'RMSE_Train', 'RMSE_Test', 'NRMSE_Train(%)', 'NRMSE_Test(%)']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow({
+            'Model': model_name,
+            'n_osc': n_osc,
+            'RMSE_Train': f"{rmse_train:.6e}",
+            'RMSE_Test':  f"{rmse_test:.6e}",
+            'NRMSE_Train(%)': f"{nrmse_train * 100:.4f}",
+            'NRMSE_Test(%)':  f"{nrmse_test * 100:.4f}"
+        })
 
 def plot_results(results_list, global_title, filename):
     """

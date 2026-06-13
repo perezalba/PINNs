@@ -20,7 +20,7 @@ def main():
 
     print("\nStandard FCNN")
     results_fcnn = []
-    n_osc_list = [4, 8, 12]
+    n_osc_list = [4,6,8,10,12]
     for n in n_osc_list:
         print(f"\n-> Training FCNN for {n} oscillations...")
         model = PendulumFCNN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, epochs=10000)
@@ -31,7 +31,7 @@ def main():
 
     print("\nPINN (without SIREN)")
     results_pinn_std = []
-    n_osc_list_pinn_std = [4,5,8]
+    n_osc_list_pinn_std = [4,5,6,7,8]
     for n in n_osc_list_pinn_std:
         print(f"\n-> Training PINN (without SIREN) for {n} oscillations...")
         model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=30000, use_siren=False)
@@ -42,9 +42,10 @@ def main():
 
     print("\nPINN (with SIREN)")
     results_pinn_siren = []
-    for n in n_osc_list:
+    n_osc_list_siren = [4,6,8,10,12]
+    for n in n_osc_list_siren:
         print(f"\n-> Training PINN (SIREN) for {n} oscillations...")
-        model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=4000, use_siren=True)
+        model = PendulumPINN(theta0, n_osc=n, trn_pts=trn_pts, trn_part=trn_part, t_phys_pts=t_phys_pts, epochs=3000, use_siren=True)
         model.train()
         results_pinn_siren.append(model.get_plot_data())
         

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.special import ellipj
 
 from networks import FCN, Siren
-from utils import get_analytical_pendulum
+from utils import get_analytical_pendulum, save_simulation_errors
 
 class PendulumFCNN():
     """
@@ -70,6 +70,15 @@ class PendulumFCNN():
                 print(f"Epoch {i+1:5d} | MSE Loss: {loss.item():.4e}")
 
         print("Training complete.")
+
+        self.model.eval()
+        with torch.no_grad():
+            theta_pred_final = self.model(self.t)
+
+        y_true = self.theta.detach().cpu().numpy()
+        y_pred = theta_pred_final.detach().cpu().numpy()
+
+        save_simulation_errors(y_true, y_pred, self.trn_part, "FCNN", self.n_osc)
         
     def get_plot_data(self):
         """
@@ -180,6 +189,19 @@ class PendulumPINN():
                 print(f"Epoch {i+1:5d} | Total Loss: {loss.item():.4e}")
 
         print("Training complete.")
+
+        self.model.eval()
+        with torch.no_grad():
+            if self.use_siren:
+                theta_pred_final, _ = self.model(self.t)
+            else:
+                theta_pred_final = self.model(self.t)
+
+        y_true = self.theta.detach().cpu().numpy()
+        y_pred = theta_pred_final.detach().cpu().numpy()
+
+        model_name = "PINN_SIREN" if self.use_siren else "PINN_std"
+        save_simulation_errors(y_true, y_pred, self.trn_part, model_name, self.n_osc)
 
     def get_plot_data(self):
         """
